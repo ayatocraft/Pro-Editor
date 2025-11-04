@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高機能コードエディタ (モバイル対応)</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/searchcursor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.js"></script>
+
+
+    <style>
+        /* --- CSS（全体の見た目）--- */
+        body {
+            font-family: sans-serif;
+            margin: 10px;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 20px);
+            box-sizing: border-box; /* padding計算のため */
+        }
+        .container {
+            display: flex;
+            flex: 1; /* 画面の高さいっぱいに広げる */
+            gap: 10px;
+            overflow: hidden; /* メインエリアのスクロールを防ぐ */
+        }
+        .editor-pane, .preview-pane {
+            flex: 1; /* 左右均等に分割 */
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .pane-header {
+            padding: 10px;
+            background: #eee;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        /* --- CodeMirrorエディタのスタイル --- */
+        .CodeMirror {
+            border: 1px solid #ccc;
+            height: 100%; /* 親要素(editor-pane)いっぱいに広げる */
+            font-size: 14px;
+        }
+        
+        /* --- プレビュー用iframe --- */
+        #previewFrame {
+            width: 100%;
+            height: 100%; /* 親要素(preview-pane)いっぱいに広げる */
+            border: none;
+        }
+
+        /* --- 上部コントロール --- */
+        .controls {
+            display: flex;
+            flex-wrap: wrap; /* 折り返し */
+            gap: 10px;
+            padding: 10px;
+            background: #fff;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        .controls > div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* --- 汎用コントロール（入力欄など） --- */
+        input[type="text"], select {
+            font-size: 1rem; /* モバイルで見やすく */
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            font-size: 1rem; /* モバイルで見やすく */
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        .search-button { background-color: #6c757d; }
+        .search-button:hover { background-color: #5a6268; }
+
+        .hidden {
+            display: none;
+        }
+
+        /* ★★★ ここからモバイル対応CSS ★★★ */
+        @media (max-width: 768px) {
+            body {
+                margin: 5px;
+                height: auto; /* モバイルでは高さ自動 */
+            }
+
+            /* コントロールパネルを縦積みに */
+            .controls {
+                flex-direction: column;
+                align-items: stretch; /* 幅をいっぱいに */
+                gap: 12px;
+            }
+            .controls > div {
+                flex-direction: column; /* ラベルと入力欄も縦に */
+                align-items: flex-start;
+                gap: 5px;
+            }
+            /* ボタン類は幅いっぱいに */
+            .controls button, .controls select, .controls input[type="text"] {
+                width: 100%;
+                box-sizing: border-box; /* padding込みで100% */
+            }
+
+            /* メインエリアを縦積みに */
+            .container {
+                flex-direction: column;
+                height: auto; /* 高さを自動に */
+            }
+
+            /* エディタとプレビューの高さを固定 */
+            .editor-pane, .preview-pane {
+                flex: none; /* flex:1 を解除 */
+                height: 400px; /* 固定の高さを指定 */
+                min-height: 300px;
+            }
+
+            /* CodeMirrorの高さも固定に */
+            .CodeMirror {
+                height: 100%; /* 親の .editor-pane (height: 400px) に合わせる */
+            }
+            
+            /* プレビューが非表示の時は高さを0に */
+            .preview-pane.hidden {
+                height: 0;
+                min-height: 0;
+            }
+        }
+        /* ★★★ モバイル対応CSSここまで ★★★ */
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div>
+            <label for="fileName">ファイル名:</label>
+            <input type="text" id="fileName" value="myFile">
+        </div>
+        
+        <div>
+            <label for="fileType">出力先:</label>
+            <select id="fileType">
+                <option value="htmlmixed" data-ext=".html">HTML (.html)</option>
+                <option value="javascript" data-ext=".js">JavaScript (.js)</option>
+                <option value="css" data-ext=".css">CSS (.css)</option>
+                <option value="application/json" data-ext=".json">JSON (.json)</option>
+                <option value="xml" data-ext=".md">Markdown (.md)</option>
+                <option value="custom" data-ext="">カスタム...</option>
+            </select>
+        </div>
+        
+        <div id="customExtWrapper" class="hidden">
+            <label for="customExt">カスタム拡張子:</label>
+            <input type="text" id="customExt" placeholder=".exe など">
+        </div>
+
+        <div>
+            <label for="encoding">文字コード:</label>
+            <select id="encoding">
+                <option value="UTF-8">UTF-8</option>
+                <option value="Shift_JIS">Shift_JIS (SJIS)</option>
+            </select>
+        </div>
+
+        <div id="htmlAuxOptions" class="hidden">
+            <input type="checkbox" id="auxCheckbox" style="width: auto;"> <label for="auxCheckbox">HTMLテンプレート補助</label>
+        </div>
+        
+        <div>
+            <button id="searchButton" class="search-button">コード内検索 (ハイライト)</button>
+        </div>
+        
+        <div>
+            <button id="downloadButton">ダウンロード</button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="editor-pane">
+            <div class="pane-header">エディタ</div>
+            <textarea id="codeInput"></textarea>
+        </div>
+        
+        <div id="previewPane" class="preview-pane hidden">
+            <div class="pane-header">HTMLプレビュー (リアルタイム)</div>
+            <iframe id="previewFrame"></iframe>
+        </div>
+
+    </div>
+
+
+    <script>
+        // --- HTMLテンプレート定義 ---
+        const htmlTemplate = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+    <style>
+        /* CSSをここに書けます */
+        
+    </style>
+</head>
+<body>
+
+    <h1>Hello World!</h1>
+
+    <script>
+        /* JavaScriptをここに書けます */
+        
+    <\/script>
+</body>
+</html>
+`;
+
+        // --- 1. 必要な要素を取得 ---
+        const codeInput = document.getElementById('codeInput');
+        const fileTypeSelect = document.getElementById('fileType');
+        const customExtWrapper = document.getElementById('customExtWrapper');
+        const customExtInput = document.getElementById('customExt');
+        const htmlAuxOptions = document.getElementById('htmlAuxOptions');
+        const auxCheckbox = document.getElementById('auxCheckbox');
+        const previewPane = document.getElementById('previewPane');
+        const previewFrame = document.getElementById('previewFrame');
+        const fileNameInput = document.getElementById('fileName');
+        const encodingSelect = document.getElementById('encoding');
+        const downloadButton = document.getElementById('downloadButton');
+        const searchButton = document.getElementById('searchButton');
+
+        // --- 2. CodeMirrorエディタを初期化 ---
+        const editor = CodeMirror.fromTextArea(codeInput, {
+            lineNumbers: true, // 行番号を表示
+            mode: 'htmlmixed', // デフォルトのモード
+        });
+        // エディタのサイズを親要素に合わせる
+        editor.setSize("100%", "100%");
+
+
+        // --- 3. 補助機能のロジック ---
+
+        // HTMLテンプレートを挿入/削除する関数
+        function toggleHtmlTemplate() {
+            if (auxCheckbox.checked) {
+                // テンプレートにviewportも追加
+                editor.setValue(htmlTemplate);
+            } else {
+                editor.setValue(''); // チェックを外したらクリア
+            }
+        }
+
+        // 出力先(select)が変更された時の処理
+        fileTypeSelect.addEventListener('change', () => {
+            const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
+            const mode = selectedOption.value;
+            
+            // A. カスタム拡張子欄の表示/非表示
+            if (mode === 'custom') {
+                customExtWrapper.classList.remove('hidden');
+            } else {
+                customExtWrapper.classList.add('hidden');
+            }
+            
+            // B. HTML補助オプションとプレビューの表示/非表示
+            if (mode === 'htmlmixed') {
+                htmlAuxOptions.classList.remove('hidden');
+                previewPane.classList.remove('hidden');
+                // 補助がチェックされてたらテンプレート挿入
+                if (auxCheckbox.checked) {
+                    toggleHtmlTemplate();
+                }
+                // プレビューの更新もトリガー
+                updatePreview();
+            } else {
+                htmlAuxOptions.classList.add('hidden');
+                previewPane.classList.add('hidden');
+            }
+            
+            // C. CodeMirrorの言語モード（色分け）を変更
+            editor.setOption('mode', mode);
+        });
+
+        // HTML補助チェックボックスが変更された時の処理
+        auxCheckbox.addEventListener('change', toggleHtmlTemplate);
+
+        // プレビューを更新する関数
+        function updatePreview() {
+            if (fileTypeSelect.value === 'htmlmixed' && !previewPane.classList.contains('hidden')) {
+                const htmlContent = editor.getValue();
+                // iframeに内容を直接書き込む (srcdoc)
+                previewFrame.srcdoc = htmlContent;
+            }
+        }
+
+        // エディタの内容が変更された時の処理 (HTMLプレビュー用)
+        // リアルタイムすぎるとモバイルで重い場合があるので、少し遅延(debounce)させる方がベター
+        let debounceTimer;
+        editor.on('change', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updatePreview, 300); // 300ミリ秒後にプレビュー
+        });
+
+        // 入力補助（検索）ボタンが押された時の処理
+        searchButton.addEventListener('click', () => {
+            editor.execCommand('find'); 
+        });
+
+        // --- 4. ダウンロード処理 ---
+        downloadButton.addEventListener('click', () => {
+            const textData = editor.getValue();
+            const fileName = fileNameInput.value || 'download';
+            let fileExtension = '';
+            const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
+            
+            if (selectedOption.value === 'custom') {
+                fileExtension = customExtInput.value;
+            } else {
+                fileExtension = selectedOption.dataset.ext;
+            }
+            
+            const fullFileName = fileName + fileExtension;
+            const encoding = encodingSelect.value;
+            const blob = new Blob([textData], { 
+                type: `application/octet-stream;charset=${encoding}` 
+            });
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = fullFileName;
+            downloadLink.click();
+            URL.revokeObjectURL(downloadLink.href);
+        });
+
+        // --- 5. 初期読み込み時の設定 ---
+        fileTypeSelect.dispatchEvent(new Event('change'));
+
+    </script>
+
+</body>
+</html>
