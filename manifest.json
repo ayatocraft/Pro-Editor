@@ -2,29 +2,21 @@
   "name": "Pro-Editor",
   "short_name": "ProEditor",
   "description": "ブラウザで動作する高機能コードエディタ",
-
-  // --- スタートページとスコープ ---
   "start_url": "https://ayatocraft.github.io/Pro-Editor/",
   "scope": "https://ayatocraft.github.io/Pro-Editor/",
-
-  // --- タブ付きアプリケーションモード ---
   "display_override": ["tabbed", "standalone"],
   "display": "standalone",
-
-  // --- テーマカラー ---
   "background_color": "#ffffff",
   "theme_color": "#007bff",
-
-  // --- アイコン (パスを修正) ---
   "icons": [
     {
-      "src": "icon-192.png",  /* ★ 修正点: パスとファイル名 */
+      "src": "icon-192.png", 
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable" 
     },
     {
-      "src": "icon-512.png",  /* ★ 修正点: パスとファイル名 */
+      "src": "icon-512.png",  
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
