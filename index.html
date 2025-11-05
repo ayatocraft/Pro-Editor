@@ -6,7 +6,7 @@
     <title>高機能コードエディタ (モバイル対応)</title>
 
     <!-- PWA: manifest と theme-color -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/Pro-Editor/manifest.json" />
     <meta name="theme-color" content="#007bff" />
 
     <!-- (既存) CodeMirror -->
@@ -301,19 +301,20 @@
         fileTypeSelect.dispatchEvent(new Event('change'));
 
 
-        /* -------------------------
+       /* -------------------------
            PWA: Service Worker 登録 & インストール処理
            ------------------------- */
         // サービスワーカー登録
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(reg => {
+            // ★ 修正点: パスを /Pro-Editor/ から始める
+            navigator.serviceWorker.register('/Pro-Editor/sw.js').then(reg => {
                 // 登録成功
                 console.log('ServiceWorker registered', reg);
             }).catch(err => {
                 console.warn('ServiceWorker registration failed:', err);
             });
         }
-
+        
         // PWA インストール用イベント（beforeinstallprompt）
         let deferredPrompt = null;
         const installBtn = document.getElementById('installButton');
