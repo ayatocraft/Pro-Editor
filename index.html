@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高機能コードエディタ (モバイル対応)</title>
+    <title>高機能コードエディタ (リポジトリモード)</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.min.css">
@@ -16,27 +16,49 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/searchcursor.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/search.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.js"></script>
-
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
-        /* --- CSS（全体の見た目）--- */
-        body {
+        /* --- CSS（基本レイアウト）--- */
+        html, body {
+            height: 100%;
+            margin: 0;
             font-family: sans-serif;
-            margin: 10px;
             background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 20px);
-            box-sizing: border-box; /* padding計算のため */
+        }
+        body {
+            padding: 10px;
+            box-sizing: border-box; /* padding込みで100% */
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background: #fff;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        .controls > div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .container {
             display: flex;
-            flex: 1; /* 画面の高さいっぱいに広げる */
+            flex: 1; /* 残りの高さいっぱい */
             gap: 10px;
-            overflow: hidden; /* メインエリアのスクロールを防ぐ */
+            overflow: hidden;
         }
-        .editor-pane, .preview-pane {
-            flex: 1; /* 左右均等に分割 */
+        
+        /* --- ペイン共通 --- */
+        .pane {
+            flex: 1;
             display: flex;
             flex-direction: column;
             background: #fff;
@@ -51,47 +73,86 @@
             border-bottom: 1px solid #ccc;
         }
         
-        /* --- CodeMirrorエディタのスタイル --- */
+        /* --- ファイルエクスプローラー --- */
+        #fileExplorer {
+            flex: 0 0 200px; /* 幅200pxで固定 */
+            border-right: 1px solid #ccc;
+        }
+        #fileExplorerHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #fileAddControls {
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        #newFileName {
+            flex: 1;
+            width: 100px; /* 幅調整 */
+            padding: 4px;
+        }
+        #addFileButton {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+        #fileList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .file-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #f0f0f0;
+            /* ファイル名がはみ出たら省略 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-item:hover {
+            background-color: #f5f5f5;
+        }
+        .file-item.active-file {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* --- エディタラッパー --- */
+        .editor-wrapper {
+            flex: 1; /* エクスプローラー以外の残り全部 */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
         .CodeMirror {
-            border: 1px solid #ccc;
-            height: 100%; /* 親要素(editor-pane)いっぱいに広げる */
+            border: none;
+            flex: 1; /* ヘッダー以外の残り全部 */
+            height: auto;
             font-size: 14px;
         }
         
         /* --- プレビュー用iframe --- */
         #previewFrame {
             width: 100%;
-            height: 100%; /* 親要素(preview-pane)いっぱいに広げる */
+            height: 100%;
             border: none;
         }
 
-        /* --- 上部コントロール --- */
-        .controls {
-            display: flex;
-            flex-wrap: wrap; /* 折り返し */
-            gap: 10px;
-            padding: 10px;
-            background: #fff;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            align-items: center;
-        }
-        .controls > div {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        /* --- 汎用コントロール（入力欄など） --- */
+        /* --- 汎用コントロール --- */
         input[type="text"], select {
-            font-size: 1rem; /* モバイルで見やすく */
+            font-size: 1rem;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
         button {
-            font-size: 1rem; /* モバイルで見やすく */
+            font-size: 1rem;
             padding: 8px 15px;
             background-color: #007bff;
             color: white;
@@ -107,68 +168,68 @@
             display: none;
         }
 
-        /* ★★★ ここからモバイル対応CSS ★★★ */
+        /* --- モバイル対応CSS --- */
         @media (max-width: 768px) {
             body {
-                margin: 5px;
-                height: auto; /* モバイルでは高さ自動 */
+                padding: 5px;
             }
-
-            /* コントロールパネルを縦積みに */
             .controls {
                 flex-direction: column;
-                align-items: stretch; /* 幅をいっぱいに */
-                gap: 12px;
+                align-items: stretch;
             }
             .controls > div {
-                flex-direction: column; /* ラベルと入力欄も縦に */
+                flex-direction: column;
                 align-items: flex-start;
                 gap: 5px;
             }
-            /* ボタン類は幅いっぱいに */
             .controls button, .controls select, .controls input[type="text"] {
                 width: 100%;
-                box-sizing: border-box; /* padding込みで100% */
+                box-sizing: border-box;
             }
 
             /* メインエリアを縦積みに */
             .container {
                 flex-direction: column;
-                height: auto; /* 高さを自動に */
-            }
-
-            /* エディタとプレビューの高さを固定 */
-            .editor-pane, .preview-pane {
-                flex: none; /* flex:1 を解除 */
-                height: 400px; /* 固定の高さを指定 */
-                min-height: 300px;
-            }
-
-            /* CodeMirrorの高さも固定に */
-            .CodeMirror {
-                height: 100%; /* 親の .editor-pane (height: 400px) に合わせる */
             }
             
-            /* プレビューが非表示の時は高さを0に */
-            .preview-pane.hidden {
-                height: 0;
-                min-height: 0;
+            /* エディタペインも縦に（エクスプローラーとエディタ） */
+            .editor-pane {
+                flex-direction: column;
+                height: 400px; /* モバイルでのエディタ高さ */
+                flex: 1; /* 縦積み時のflexを戻す */
+            }
+            #fileExplorer {
+                flex: 0 0 auto; /* 高さを自動に */
+                border-right: none;
+                border-bottom: 1px solid #ccc;
+                max-height: 150px; /* ファイル一覧の最大高さ */
+                display: flex;
+                flex-direction: column;
+            }
+            .editor-wrapper {
+                height: auto; /* 高さを自動にリセット */
+                flex: 1; /* 残りの高さを埋める */
+            }
+
+            .preview-pane {
+                height: 400px; /* プレビュー高さ */
+                flex: 1;
             }
         }
-        /* ★★★ モバイル対応CSSここまで ★★★ */
     </style>
 </head>
 <body>
 
     <div class="controls">
         <div>
-            <label for="fileName">ファイル名:</label>
-            <input type="text" id="fileName" value="myFile">
+            <label for="fileName">ファイル名 / ZIP名:</label>
+            <input type="text" id="fileName" value="myProject">
         </div>
         
         <div>
             <label for="fileType">出力先:</label>
             <select id="fileType">
+                <option value="repository" data-ext=".zip">リポジトリ (.zip)</option>
                 <option value="htmlmixed" data-ext=".html">HTML (.html)</option>
                 <option value="javascript" data-ext=".js">JavaScript (.js)</option>
                 <option value="css" data-ext=".css">CSS (.css)</option>
@@ -192,7 +253,8 @@
         </div>
 
         <div id="htmlAuxOptions" class="hidden">
-            <input type="checkbox" id="auxCheckbox" style="width: auto;"> <label for="auxCheckbox">HTMLテンプレート補助</label>
+            <input type="checkbox" id="auxCheckbox" style="width: auto;">
+            <label for="auxCheckbox">HTMLテンプレート補助</label>
         </div>
         
         <div>
@@ -206,13 +268,27 @@
 
     <div class="container">
         
-        <div class="editor-pane">
-            <div class="pane-header">エディタ</div>
-            <textarea id="codeInput"></textarea>
+        <div class="editor-pane pane">
+            
+            <div id="fileExplorer" class="hidden">
+                <div class="pane-header" id="fileExplorerHeader">
+                    ファイル一覧
+                </div>
+                <ul id="fileList"></ul>
+                <div id="fileAddControls">
+                    <input type="text" id="newFileName" placeholder="file.html">
+                    <button id="addFileButton">+</button>
+                </div>
+            </div>
+
+            <div class="editor-wrapper">
+                <div class="pane-header" id="editorHeader">エディタ</div>
+                <textarea id="codeInput"></textarea>
+            </div>
         </div>
         
-        <div id="previewPane" class="preview-pane hidden">
-            <div class="pane-header">HTMLプレビュー (リアルタイム)</div>
+        <div id="previewPane" class="preview-pane pane hidden">
+            <div class="pane-header" id="previewHeader">プレビュー</div>
             <iframe id="previewFrame"></iframe>
         </div>
 
@@ -220,32 +296,58 @@
 
 
     <script>
-        // --- HTMLテンプレート定義 ---
+        // --- グローバル変数 ---
+        let isRepoMode = false;
+        let files = {}; // リポジトリモードのファイルストア
+        let activeFile = null; // リポジトリモードで編集中のファイル
+        
+        // --- HTMLテンプレート ---
         const htmlTemplate = `<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Title</title>
-    <style>
-        /* CSSをここに書けます */
-        
-    </style>
 </head>
 <body>
-
     <h1>Hello World!</h1>
-
-    <script>
-        /* JavaScriptをここに書けます */
-        
-    <\/script>
 </body>
 </html>
 `;
+        const indexHtmlTemplate = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>My Project</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>リポジトリモード</h1>
+    <p>index.html です。CSSが適用されています。</p>
+    <a href="page2.html">ページ2へ</a>
+    <script src="script.js"><\/script>
+</body>
+</html>
+`;
+        // CSSとJSのサンプルファイル
+        const cssTemplate = `body {
+    background-color: #f0f8ff; /* AliceBlue */
+    font-family: sans-serif;
+    color: #333;
+}
+h1 {
+    color: #0056b3; /* 濃い青 */
+}`;
+        const jsTemplate = `console.log('script.js が読み込まれました');
+document.addEventListener('DOMContentLoaded', () => {
+    const p = document.querySelector('p');
+    if (p) {
+        p.textContent += ' (JavaScriptによる追記)';
+    }
+});`;
+
 
         // --- 1. 必要な要素を取得 ---
-        const codeInput = document.getElementById('codeInput');
         const fileTypeSelect = document.getElementById('fileType');
         const customExtWrapper = document.getElementById('customExtWrapper');
         const customExtInput = document.getElementById('customExt');
@@ -257,91 +359,324 @@
         const encodingSelect = document.getElementById('encoding');
         const downloadButton = document.getElementById('downloadButton');
         const searchButton = document.getElementById('searchButton');
+        
+        // リポジトリモード用
+        const fileExplorer = document.getElementById('fileExplorer');
+        const fileList = document.getElementById('fileList');
+        const newFileNameInput = document.getElementById('newFileName');
+        const addFileButton = document.getElementById('addFileButton');
+        const editorHeader = document.getElementById('editorHeader');
 
         // --- 2. CodeMirrorエディタを初期化 ---
-        const editor = CodeMirror.fromTextArea(codeInput, {
+        const editor = CodeMirror.fromTextArea(document.getElementById('codeInput'), {
             lineNumbers: true, // 行番号を表示
             mode: 'htmlmixed', // デフォルトのモード
         });
-        // エディタのサイズを親要素に合わせる
-        editor.setSize("100%", "100%");
 
+        // --- 3. リポジトリモード UI管理 ---
 
-        // --- 3. 補助機能のロジック ---
+        // ファイル一覧を再描画
+        function renderFileList() {
+            fileList.innerHTML = ''; // 一旦クリア
+            Object.keys(files).sort().forEach(filename => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.textContent = filename;
+                li.dataset.filename = filename;
+                if (filename === activeFile) {
+                    li.classList.add('active-file');
+                }
+                fileList.appendChild(li);
+            });
+        }
 
-        // HTMLテンプレートを挿入/削除する関数
-        function toggleHtmlTemplate() {
-            if (auxCheckbox.checked) {
-                // テンプレートにviewportも追加
-                editor.setValue(htmlTemplate);
-            } else {
-                editor.setValue(''); // チェックを外したらクリア
+        // アクティブなファイルをエディタに読み込む
+        function loadFileIntoEditor(filename) {
+            if (!files.hasOwnProperty(filename)) return;
+
+            // 1. 現在のファイルを保存
+            saveActiveFile();
+            
+            // 2. 新しいファイルを設定
+            activeFile = filename;
+            editor.setValue(files[filename]);
+            editorHeader.textContent = `エディタ (${filename})`;
+            
+            // 3. 言語モードを拡張子から推測
+            let mode = 'text/plain';
+            if (filename.endsWith('.html')) mode = 'htmlmixed';
+            else if (filename.endsWith('.js')) mode = 'javascript';
+            else if (filename.endsWith('.css')) mode = 'css';
+            else if (filename.endsWith('.json')) mode = 'application/json';
+            else if (filename.endsWith('.md')) mode = 'xml'; // (Markdownはxmlモードで代用)
+            editor.setOption('mode', mode);
+
+            // 4. ファイル一覧のハイライト更新
+            renderFileList();
+        }
+
+        // 現在エディタにある内容をファイルストアに保存
+        function saveActiveFile() {
+            if (activeFile && files.hasOwnProperty(activeFile)) {
+                files[activeFile] = editor.getValue();
             }
         }
 
-        // 出力先(select)が変更された時の処理
+        // リポジトリモードの初期化
+        function initRepoMode() {
+            isRepoMode = true;
+            // サンプルファイルを追加
+            files = {
+                'index.html': indexHtmlTemplate,
+                'page2.html': '<html><body><h2>ページ2です</h2><a href="index.html">戻る</a></body></html>',
+                'style.css': cssTemplate,
+                'script.js': jsTemplate
+            };
+            activeFile = 'index.html';
+
+            fileExplorer.classList.remove('hidden');
+            previewPane.classList.remove('hidden');
+            htmlAuxOptions.classList.add('hidden');
+            customExtWrapper.classList.add('hidden');
+            
+            loadFileIntoEditor(activeFile);
+            updateRepoPreview(); // プレビュー更新
+        }
+
+        // リポジトリモードの終了
+        function exitRepoMode() {
+            isRepoMode = false;
+            saveActiveFile(); // 念のため保存
+            
+            fileExplorer.classList.add('hidden');
+            // プレビューと補助オプションは fileTypeSelect の 'change' イベントで制御
+        }
+
+        // --- 4. プレビュー管理 ---
+
+        // 単一HTMLファイルプレビュー
+        function updateSingleFilePreview() {
+            if (fileTypeSelect.value === 'htmlmixed') {
+                previewFrame.srcdoc = editor.getValue();
+            }
+        }
+
+        // 拡張子からMIMEタイプを取得
+        function getMimeType(filename) {
+            if (filename.endsWith('.html')) return 'text/html';
+            if (filename.endsWith('.css')) return 'text/css';
+            if (filename.endsWith('.js')) return 'text/javascript';
+            if (filename.endsWith('.json')) return 'application/json';
+            if (filename.endsWith('.png')) return 'image/png';
+            if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
+            if (filename.endsWith('.gif')) return 'image/gif';
+            return 'application/octet-stream';
+        }
+
+        // テキストをData URL (Base64) に変換
+        function textToDataUrl(text, mimeType) {
+            try {
+                // btoa() は日本語(マルチバイト文字)を直接エンコードできないため、
+                // unescape(encodeURIComponent()) を使ってUTF-8バイトシーケンスに変換する
+                const utf8Bytes = unescape(encodeURIComponent(text));
+                const base64 = btoa(utf8Bytes);
+                return `data:${mimeType};base64,${base64}`;
+            } catch (e) {
+                console.error("Base64エンコードに失敗:", e);
+                return ''; // エラー時は空
+            }
+        }
+
+        // リポジトリプレビュー (CSS/JSをData URLに変換して埋め込む)
+        function updateRepoPreview(targetFilename = 'index.html') {
+            if (!isRepoMode || !files.hasOwnProperty(targetFilename)) {
+                if (targetFilename === 'index.html') {
+                    previewFrame.srcdoc = "index.html が見つかりません。";
+                }
+                return;
+            }
+
+            let htmlContent = files[targetFilename];
+
+            // DOMParserを使ってHTMLを解析
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+
+            // CSS <link href="..."> を置換
+            doc.querySelectorAll('link[href]').forEach(link => {
+                const href = link.getAttribute('href');
+                // 相対パスかつ http や data で始まっていないもの
+                if (href && !href.startsWith('http') && !href.startsWith('data:')) {
+                    // files オブジェクトにファイルが存在するかチェック
+                    if (files.hasOwnProperty(href)) {
+                        const mimeType = getMimeType(href);
+                        const dataUrl = textToDataUrl(files[href], mimeType);
+                        link.setAttribute('href', dataUrl);
+                    }
+                }
+            });
+
+            // JS <script src="..."> を置換
+            doc.querySelectorAll('script[src]').forEach(script => {
+                const src = script.getAttribute('src');
+                if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+                    if (files.hasOwnProperty(src)) {
+                        const mimeType = getMimeType(src);
+                        const dataUrl = textToDataUrl(files[src], mimeType);
+                        script.setAttribute('src', dataUrl);
+                    }
+                }
+            });
+
+            // (画像 <img src="..."> なども同様に追加可能)
+            // (注: このサンプルはテキストファイルのみ対応。画像は別途Base64で保持する仕組みが必要)
+
+
+            // 変更したDOMをHTML文字列に戻す
+            const newHtmlContent = doc.documentElement.outerHTML;
+            
+            previewFrame.srcdoc = newHtmlContent;
+        }
+
+        // プレビュー内リンクのクリックを検知
+        previewFrame.addEventListener('load', () => {
+            if (!isRepoMode) return; // リポジトリモード以外では何もしない
+            
+            try {
+                const iDoc = previewFrame.contentWindow.document;
+                iDoc.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', e => {
+                        e.preventDefault(); // デフォルトのリンク遷移を停止
+                        
+                        const href = link.getAttribute('href');
+                        if (!href || href.startsWith('http') || href.startsWith('#')) return;
+
+                        // (注: 本来は複雑なパス解決が必要だが、ここでは単純なファイル名と仮定)
+                        const targetFile = href.split('/').pop();
+                        
+                        if (files.hasOwnProperty(targetFile) && targetFile.endsWith('.html')) {
+                            // プレビュー更新関数を呼び出す
+                            updateRepoPreview(targetFile); 
+                        } else if (files.hasOwnProperty(targetFile)) {
+                            console.warn(`プレビュー：HTML以外のファイル "${targetFile}" へのリンクはプレビューできません。`);
+                        } else {
+                            console.warn(`プレビュー：ファイル "${targetFile}" はリポジトリに存在しません。`);
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error("プレビューの操作に失敗しました (クロスオリジン制約の可能性があります):", e);
+            }
+        });
+
+
+        // --- 5. イベントリスナー設定 ---
+
+        // 出力先(select)変更：モード切替
         fileTypeSelect.addEventListener('change', () => {
             const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
             const mode = selectedOption.value;
-            
-            // A. カスタム拡張子欄の表示/非表示
-            if (mode === 'custom') {
-                customExtWrapper.classList.remove('hidden');
-            } else {
-                customExtWrapper.classList.add('hidden');
+
+            // リポジトリモードへの切り替え
+            if (mode === 'repository') {
+                initRepoMode();
+                return;
             }
             
-            // B. HTML補助オプションとプレビューの表示/非表示
-            if (mode === 'htmlmixed') {
-                htmlAuxOptions.classList.remove('hidden');
-                previewPane.classList.remove('hidden');
-                // 補助がチェックされてたらテンプレート挿入
-                if (auxCheckbox.checked) {
-                    toggleHtmlTemplate();
-                }
-                // プレビューの更新もトリガー
-                updatePreview();
+            // 他モードへの切り替え
+            if (isRepoMode) {
+                exitRepoMode();
+            }
+
+            // カスタム拡張子
+            customExtWrapper.classList.toggle('hidden', mode !== 'custom');
+            
+            // HTML補助オプションとプレビュー
+            const isHtml = (mode === 'htmlmixed');
+            htmlAuxOptions.classList.toggle('hidden', !isHtml);
+            previewPane.classList.toggle('hidden', !isHtml);
+            
+            if (isHtml) {
+                editor.setOption('mode', 'htmlmixed');
+                if (auxCheckbox.checked) editor.setValue(htmlTemplate);
+                else editor.setValue('');
+                updateSingleFilePreview();
             } else {
-                htmlAuxOptions.classList.add('hidden');
-                previewPane.classList.add('hidden');
+                editor.setOption('mode', mode);
             }
             
-            // C. CodeMirrorの言語モード（色分け）を変更
-            editor.setOption('mode', mode);
+            editorHeader.textContent = 'エディタ';
         });
 
-        // HTML補助チェックボックスが変更された時の処理
-        auxCheckbox.addEventListener('change', toggleHtmlTemplate);
+        // HTML補助チェックボックス
+        auxCheckbox.addEventListener('change', () => {
+            if (auxCheckbox.checked) editor.setValue(htmlTemplate);
+            else editor.setValue('');
+        });
 
-        // プレビューを更新する関数
-        function updatePreview() {
-            if (fileTypeSelect.value === 'htmlmixed' && !previewPane.classList.contains('hidden')) {
-                const htmlContent = editor.getValue();
-                // iframeに内容を直接書き込む (srcdoc)
-                previewFrame.srcdoc = htmlContent;
-            }
-        }
-
-        // エディタの内容が変更された時の処理 (HTMLプレビュー用)
-        // リアルタイムすぎるとモバイルで重い場合があるので、少し遅延(debounce)させる方がベター
+        // エディタ内容変更 (プレビュー更新)
         let debounceTimer;
         editor.on('change', () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updatePreview, 300); // 300ミリ秒後にプレビュー
+            debounceTimer = setTimeout(() => {
+                if (isRepoMode) {
+                    saveActiveFile(); // 現在の変更を保存
+                    // アクティブなファイルがHTMLなら、そのファイルをプレビュー
+                    if (activeFile.endsWith('.html')) {
+                        updateRepoPreview(activeFile);
+                    }
+                } else {
+                    updateSingleFilePreview();
+                }
+            }, 300); // 300ミリ秒遅延
         });
 
-        // 入力補助（検索）ボタンが押された時の処理
-        searchButton.addEventListener('click', () => {
-            editor.execCommand('find'); 
+        // 検索ボタン
+        searchButton.addEventListener('click', () => editor.execCommand('find'));
+
+        // ファイル一覧クリック (イベント委譲)
+        fileList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('file-item')) {
+                const filename = e.target.dataset.filename;
+                loadFileIntoEditor(filename);
+            }
         });
 
-        // --- 4. ダウンロード処理 ---
+        // ファイル追加ボタン
+        addFileButton.addEventListener('click', () => {
+            const filename = newFileNameInput.value.trim();
+            if (!filename) {
+                alert('ファイル名を入力してください。');
+                return;
+            }
+            if (files.hasOwnProperty(filename)) {
+                alert('同じ名前のファイルが既に存在します。');
+                return;
+            }
+            
+            files[filename] = ''; // 空のファイルを作成
+            newFileNameInput.value = '';
+            renderFileList();
+            loadFileIntoEditor(filename); // 新規作成したファイルをアクティブに
+        });
+
+
+        // --- 6. ダウンロード処理 ---
         downloadButton.addEventListener('click', () => {
+            if (isRepoMode) {
+                downloadZip();
+            } else {
+                downloadSingleFile();
+            }
+        });
+
+        // 単一ファイルダウンロード
+        function downloadSingleFile() {
             const textData = editor.getValue();
             const fileName = fileNameInput.value || 'download';
             let fileExtension = '';
-            const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
             
+            const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
             if (selectedOption.value === 'custom') {
                 fileExtension = customExtInput.value;
             } else {
@@ -350,18 +685,47 @@
             
             const fullFileName = fileName + fileExtension;
             const encoding = encodingSelect.value;
-            const blob = new Blob([textData], { 
-                type: `application/octet-stream;charset=${encoding}` 
-            });
+            const blob = new Blob([textData], { type: `application/octet-stream;charset=${encoding}` });
 
+            triggerDownload(blob, fullFileName);
+        }
+
+        // ZIPダウンロード (リポジトリモード)
+        function downloadZip() {
+            saveActiveFile(); // 最後の変更を保存
+            
+            const zip = new JSZip();
+            
+            // すべてのファイルをZIPに追加
+            for (const [filename, content] of Object.entries(files)) {
+                zip.file(filename, content);
+            }
+            
+            const zipName = (fileNameInput.value || 'project') + '.zip';
+            
+            // ZIPをBlobとして生成
+            zip.generateAsync({ type: "blob" })
+                .then(blob => {
+                    triggerDownload(blob, zipName);
+                })
+                .catch(e => {
+                    console.error("ZIPの作成に失敗しました:", e);
+                    alert("ZIPの作成に失敗しました。");
+                });
+        }
+        
+        // ダウンロード実行
+        function triggerDownload(blob, filename) {
             const downloadLink = document.createElement('a');
             downloadLink.href = URL.createObjectURL(blob);
-            downloadLink.download = fullFileName;
+            downloadLink.download = filename;
             downloadLink.click();
             URL.revokeObjectURL(downloadLink.href);
-        });
+        }
 
-        // --- 5. 初期読み込み時の設定 ---
+        // --- 7. 初期読み込み ---
+        // デフォルトでリポジトリモードを起動
+        fileTypeSelect.value = 'repository';
         fileTypeSelect.dispatchEvent(new Event('change'));
 
     </script>
