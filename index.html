@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>高機能コードエディタ (モバイル対応)</title>
 
+    <!-- PWA: manifest と theme-color -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#007bff" />
+
+    <!-- (既存) CodeMirror -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.min.css">
     
@@ -17,7 +22,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/search.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.js"></script>
 
-
     <style>
         /* --- CSS（全体の見た目）--- */
         body {
@@ -27,16 +31,16 @@
             display: flex;
             flex-direction: column;
             height: calc(100vh - 20px);
-            box-sizing: border-box; /* padding計算のため */
+            box-sizing: border-box;
         }
         .container {
             display: flex;
-            flex: 1; /* 画面の高さいっぱいに広げる */
+            flex: 1;
             gap: 10px;
-            overflow: hidden; /* メインエリアのスクロールを防ぐ */
+            overflow: hidden;
         }
         .editor-pane, .preview-pane {
-            flex: 1; /* 左右均等に分割 */
+            flex: 1;
             display: flex;
             flex-direction: column;
             background: #fff;
@@ -50,25 +54,19 @@
             font-weight: bold;
             border-bottom: 1px solid #ccc;
         }
-        
-        /* --- CodeMirrorエディタのスタイル --- */
         .CodeMirror {
             border: 1px solid #ccc;
-            height: 100%; /* 親要素(editor-pane)いっぱいに広げる */
+            height: 100%;
             font-size: 14px;
         }
-        
-        /* --- プレビュー用iframe --- */
         #previewFrame {
             width: 100%;
-            height: 100%; /* 親要素(preview-pane)いっぱいに広げる */
+            height: 100%;
             border: none;
         }
-
-        /* --- 上部コントロール --- */
         .controls {
             display: flex;
-            flex-wrap: wrap; /* 折り返し */
+            flex-wrap: wrap;
             gap: 10px;
             padding: 10px;
             background: #fff;
@@ -82,16 +80,14 @@
             align-items: center;
             gap: 5px;
         }
-        
-        /* --- 汎用コントロール（入力欄など） --- */
         input[type="text"], select {
-            font-size: 1rem; /* モバイルで見やすく */
+            font-size: 1rem;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
         button {
-            font-size: 1rem; /* モバイルで見やすく */
+            font-size: 1rem;
             padding: 8px 15px;
             background-color: #007bff;
             color: white;
@@ -102,60 +98,18 @@
         button:hover { background-color: #0056b3; }
         .search-button { background-color: #6c757d; }
         .search-button:hover { background-color: #5a6268; }
+        .hidden { display: none; }
 
-        .hidden {
-            display: none;
-        }
-
-        /* ★★★ ここからモバイル対応CSS ★★★ */
         @media (max-width: 768px) {
-            body {
-                margin: 5px;
-                height: auto; /* モバイルでは高さ自動 */
-            }
-
-            /* コントロールパネルを縦積みに */
-            .controls {
-                flex-direction: column;
-                align-items: stretch; /* 幅をいっぱいに */
-                gap: 12px;
-            }
-            .controls > div {
-                flex-direction: column; /* ラベルと入力欄も縦に */
-                align-items: flex-start;
-                gap: 5px;
-            }
-            /* ボタン類は幅いっぱいに */
-            .controls button, .controls select, .controls input[type="text"] {
-                width: 100%;
-                box-sizing: border-box; /* padding込みで100% */
-            }
-
-            /* メインエリアを縦積みに */
-            .container {
-                flex-direction: column;
-                height: auto; /* 高さを自動に */
-            }
-
-            /* エディタとプレビューの高さを固定 */
-            .editor-pane, .preview-pane {
-                flex: none; /* flex:1 を解除 */
-                height: 400px; /* 固定の高さを指定 */
-                min-height: 300px;
-            }
-
-            /* CodeMirrorの高さも固定に */
-            .CodeMirror {
-                height: 100%; /* 親の .editor-pane (height: 400px) に合わせる */
-            }
-            
-            /* プレビューが非表示の時は高さを0に */
-            .preview-pane.hidden {
-                height: 0;
-                min-height: 0;
-            }
+            body { margin: 5px; height: auto; }
+            .controls { flex-direction: column; align-items: stretch; gap: 12px; }
+            .controls > div { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .controls button, .controls select, .controls input[type="text"] { width: 100%; box-sizing: border-box; }
+            .container { flex-direction: column; height: auto; }
+            .editor-pane, .preview-pane { flex: none; height: 400px; min-height: 300px; }
+            .CodeMirror { height: 100%; }
+            .preview-pane.hidden { height: 0; min-height: 0; }
         }
-        /* ★★★ モバイル対応CSSここまで ★★★ */
     </style>
 </head>
 <body>
@@ -202,10 +156,14 @@
         <div>
             <button id="downloadButton">ダウンロード</button>
         </div>
+
+        <!-- PWA: インストール促進用（任意） -->
+        <div id="installWrapper" style="margin-left:auto;">
+            <button id="installButton" class="hidden">アプリをインストール</button>
+        </div>
     </div>
 
     <div class="container">
-        
         <div class="editor-pane">
             <div class="pane-header">エディタ</div>
             <textarea id="codeInput"></textarea>
@@ -215,9 +173,7 @@
             <div class="pane-header">HTMLプレビュー (リアルタイム)</div>
             <iframe id="previewFrame"></iframe>
         </div>
-
     </div>
-
 
     <script>
         // --- HTMLテンプレート定義 ---
@@ -260,82 +216,63 @@
 
         // --- 2. CodeMirrorエディタを初期化 ---
         const editor = CodeMirror.fromTextArea(codeInput, {
-            lineNumbers: true, // 行番号を表示
-            mode: 'htmlmixed', // デフォルトのモード
+            lineNumbers: true,
+            mode: 'htmlmixed',
         });
-        // エディタのサイズを親要素に合わせる
         editor.setSize("100%", "100%");
 
-
         // --- 3. 補助機能のロジック ---
-
-        // HTMLテンプレートを挿入/削除する関数
         function toggleHtmlTemplate() {
             if (auxCheckbox.checked) {
-                // テンプレートにviewportも追加
                 editor.setValue(htmlTemplate);
             } else {
-                editor.setValue(''); // チェックを外したらクリア
+                editor.setValue('');
             }
         }
 
-        // 出力先(select)が変更された時の処理
         fileTypeSelect.addEventListener('change', () => {
             const selectedOption = fileTypeSelect.options[fileTypeSelect.selectedIndex];
             const mode = selectedOption.value;
             
-            // A. カスタム拡張子欄の表示/非表示
             if (mode === 'custom') {
                 customExtWrapper.classList.remove('hidden');
             } else {
                 customExtWrapper.classList.add('hidden');
             }
             
-            // B. HTML補助オプションとプレビューの表示/非表示
             if (mode === 'htmlmixed') {
                 htmlAuxOptions.classList.remove('hidden');
                 previewPane.classList.remove('hidden');
-                // 補助がチェックされてたらテンプレート挿入
                 if (auxCheckbox.checked) {
                     toggleHtmlTemplate();
                 }
-                // プレビューの更新もトリガー
                 updatePreview();
             } else {
                 htmlAuxOptions.classList.add('hidden');
                 previewPane.classList.add('hidden');
             }
-            
-            // C. CodeMirrorの言語モード（色分け）を変更
             editor.setOption('mode', mode);
         });
 
-        // HTML補助チェックボックスが変更された時の処理
         auxCheckbox.addEventListener('change', toggleHtmlTemplate);
 
-        // プレビューを更新する関数
         function updatePreview() {
             if (fileTypeSelect.value === 'htmlmixed' && !previewPane.classList.contains('hidden')) {
                 const htmlContent = editor.getValue();
-                // iframeに内容を直接書き込む (srcdoc)
                 previewFrame.srcdoc = htmlContent;
             }
         }
 
-        // エディタの内容が変更された時の処理 (HTMLプレビュー用)
-        // リアルタイムすぎるとモバイルで重い場合があるので、少し遅延(debounce)させる方がベター
         let debounceTimer;
         editor.on('change', () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updatePreview, 300); // 300ミリ秒後にプレビュー
+            debounceTimer = setTimeout(updatePreview, 300);
         });
 
-        // 入力補助（検索）ボタンが押された時の処理
         searchButton.addEventListener('click', () => {
             editor.execCommand('find'); 
         });
 
-        // --- 4. ダウンロード処理 ---
         downloadButton.addEventListener('click', () => {
             const textData = editor.getValue();
             const fileName = fileNameInput.value || 'download';
@@ -361,10 +298,58 @@
             URL.revokeObjectURL(downloadLink.href);
         });
 
-        // --- 5. 初期読み込み時の設定 ---
         fileTypeSelect.dispatchEvent(new Event('change'));
 
-    </script>
 
+        /* -------------------------
+           PWA: Service Worker 登録 & インストール処理
+           ------------------------- */
+        // サービスワーカー登録
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+                // 登録成功
+                console.log('ServiceWorker registered', reg);
+            }).catch(err => {
+                console.warn('ServiceWorker registration failed:', err);
+            });
+        }
+
+        // PWA インストール用イベント（beforeinstallprompt）
+        let deferredPrompt = null;
+        const installBtn = document.getElementById('installButton');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Chrome 等のインストール促進イベント
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const choice = await deferredPrompt.userChoice;
+            if (choice.outcome === 'accepted') {
+                console.log('User accepted the A2HS prompt');
+            } else {
+                console.log('User dismissed the A2HS prompt');
+            }
+            deferredPrompt = null;
+            installBtn.classList.add('hidden');
+        });
+
+        // (オプション) ウィンドウ起動パラメータの取得（タブ付きPWAで使える情報を取り扱う場合など）
+        // launchParams API や window.launchQueue はブラウザサポートに依存します。ここでは安全に参照する例だけ置きます。
+        if (navigator.launchQueue) {
+            navigator.launchQueue.setConsumer((launchParams) => {
+                console.log('Launch params:', launchParams);
+                // ここでクエリやファイル起動などを処理できます
+            });
+        }
+
+        // （補助）ページが更新されたらクライアントに通知するための簡易ハンドラ
+        navigator.serviceWorker?.addEventListener?.('controllerchange', () => {
+            console.log('Service worker controller changed');
+        });
+    </script>
 </body>
 </html>
