@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オフラインエディタ</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    background: #1e1e1e;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: #2d2d2d;
+    padding: 0.5em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  #buttons {
+    display: flex;
+    gap: 0.5em;
+  }
+  button {
+    background: #3a3a3a;
+    border: none;
+    color: white;
+    padding: 0.4em 0.8em;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #555;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    background: #121212;
+    color: white;
+    border: none;
+    resize: none;
+    outline: none;
+    padding: 1em;
+    font-family: monospace;
+    font-size: 14px;
+  }
+  footer {
+    background: #2d2d2d;
+    padding: 0.5em;
+    text-align: center;
+    font-size: 0.8em;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>オフラインエディタ</h1>
+    <div id="buttons">
+      <button id="loadBtn">読み込み</button>
+      <button id="saveBtn">保存</button>
+      <button id="downloadBtn">ダウンロード</button>
+    </div>
+  </header>
+  <textarea id="editor" placeholder="ここにテキストを入力..."></textarea>
+  <footer>オフラインモードで使用可能</footer>
+
+<script>
+const editor = document.getElementById('editor');
+const STORAGE_KEY = 'offline-editor-content';
+
+// 自動読み込み
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) editor.value = saved;
+});
+
+// 入力時に自動保存
+editor.addEventListener('input', () => {
+  localStorage.setItem(STORAGE_KEY, editor.value);
+});
+
+// ボタン操作
+document.getElementById('saveBtn').addEventListener('click', () => {
+  localStorage.setItem(STORAGE_KEY, editor.value);
+  alert('ローカルに保存しました。');
+});
+
+document.getElementById('loadBtn').addEventListener('click', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  editor.value = saved || '';
+  alert('保存されたデータを読み込みました。');
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const blob = new Blob([editor.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'offline_note.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
