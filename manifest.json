@@ -1,25 +1,33 @@
 {
-  "name": "Pro Editor",
+  "name": "Pro-Editor",
   "short_name": "ProEditor",
-  "start_url": "https://ayatocraft.github.io/Pro-Editor",
+  "description": "ブラウザで動作する高機能コードエディタ",
+
+  // --- スタートページとスコープ ---
+  "start_url": "https://ayatocraft.github.io/Pro-Editor/",
   "scope": "https://ayatocraft.github.io/Pro-Editor/",
+
+  // --- タブ付きアプリケーションモード ---
+  "display_override": ["tabbed", "standalone"],
   "display": "standalone",
-  "display_override": [
-    "tabbed",
-    "standalone"
-  ],
-  "theme_color": "#1e1e1e",
-  "background_color": "#121212",
+
+  // --- テーマカラー ---
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+
+  // --- アイコン (パスを修正) ---
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "icon-192.png",  /* ★ 修正点: パスとファイル名 */
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable" 
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-512.png",  /* ★ 修正点: パスとファイル名 */
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
