@@ -1,25 +1,21 @@
 {
-  "name": "Pro Editor",
+  "name": "Pro editor",
   "short_name": "ProEditor",
-  "description": "ブラウザで動作する高機能コードエディタ",
-  "start_url": "https://ayatocraft.github.io/Pro-Editor/",
-  "scope": "https://ayatocraft.github.io/Pro-Editor/",
-  "display_override": ["tabbed", "standalone"],
-  "display": "standalone",
+  "description": "A PWA for Pro editor.",
+  "start_url": "/Pro-Editor/",
+  "display": "minimal-ui",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "theme_color": "#000000",
   "icons": [
     {
-      "src": "icon-192.png", 
+      "src": "/Pro-Editor/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable" 
+      "type": "image/png"
     },
     {
-      "src": "icon-512.png",  
+      "src": "/Pro-Editor/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
