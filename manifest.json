@@ -1,19 +1,19 @@
 {
-  "name": "Pro editor",
-  "short_name": "ProEditor",
-  "description": "A PWA for Pro editor.",
-  "start_url": "/Pro-Editor/",
+  "name": "Pro Editor",
+  "short_name": "Pro Editor",
+  "description": "プロフェッショナルな編集作業のためのPWA",
+  "start_url": "/index.html",
   "display": "minimal-ui",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#2196F3",
   "icons": [
     {
-      "src": "/Pro-Editor/icons/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/Pro-Editor/icons/icon-512x512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
