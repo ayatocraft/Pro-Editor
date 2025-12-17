@@ -1,7 +1,7 @@
 {
   "name": "Pro Editor",
   "short_name": "ProEditor",
-  "description": "Pro Editor - Tabbed Application Mode",
+  "description": "Pro Editor - Progressive Web App",
   "start_url": "./index.html",
   "scope": "./",
 
