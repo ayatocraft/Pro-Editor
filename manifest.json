@@ -1,19 +1,23 @@
 {
   "name": "Pro Editor",
-  "short_name": "Pro Editor",
-  "description": "プロフェッショナルな編集作業のためのPWA",
-  "start_url": "/index.html",
-  "display": "minimal-ui",
-  "background_color": "#ffffff",
-  "theme_color": "#2196F3",
+  "short_name": "ProEditor",
+  "description": "Pro Editor - Tabbed Application Mode",
+  "start_url": "./index.html",
+  "scope": "./",
+
+  "display": "standalone",
+
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
